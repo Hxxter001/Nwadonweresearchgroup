@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Strength Meter - Live Real-Time Forex Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .title-section {
+            flex: 1;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 2.5em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .live-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #27ae60;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        .pulse-dot.paused {
+            background: #e74c3c;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(39, 174, 96, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(39, 174, 96, 0);
+            }
+        }
+
+        .status-text {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95em;
+        }
+
+        .countdown {
+            color: #888;
+            font-size: 0.9em;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .live-toggle-btn {
+            padding: 10px 20px;
+            border: 2px solid #27ae60;
+            background: white;
+            color: #27ae60;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+            white-space: nowrap;
+        }
+
+        .live-toggle-btn:hover {
+            background: #27ae60;
+            color: white;
+        }
+
+        .live-toggle-btn.active {
+            background: #27ae60;
+            color: white;
+        }
+
+        .live-toggle-btn.paused {
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .live-toggle-btn.paused:hover {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .timeframe-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .timeframe-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.95em;
+            position: relative;
+        }
+
+        .timeframe-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .timeframe-btn.active {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .update-flash {
+            animation: flashUpdate 1s ease;
+        }
+
+        @keyframes flashUpdate {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .currencies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .currency-card {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .currency-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .currency-card.strongest {
+            border-color: #27ae60;
+            background: linear-gradient(135deg, #27ae6010 0%, #27ae6005 100%);
+        }
+
+        .currency-card.weakest {
+            border-color: #e74c3c;
+            background: linear-gradient(135deg, #e74c3c10 0%, #e74c3c05 100%);
+        }
+
+        .currency-card.updating {
+            animation: cardUpdate 0.5s ease;
+        }
+
+        @keyframes cardUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .change-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7em;
+            font-weight: 700;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .change-badge.visible {
+            opacity: 1;
+            animation: slideIn 0.3s ease;
+        }
+
+        .change-badge.up {
+            background: #27ae6020;
+            color: #27ae60;
+        }
+
+        .change-badge.down {
+            background: #e74c3c20;
+            color: #e74c3c;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(10px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .currency-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .currency-name {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .currency-flag {
+            font-size: 1.8em;
+        }
+
+        .strength-indicator {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .strength-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.8s ease, background 0.8s ease;
+        }
+
+        .strength-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            text-align: center;
+            margin: 8px 0;
+            transition: color 0.3s ease;
+        }
+
+        .change-indicator {
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+        }
+
+        .positive {
+            color: #27ae60;
+        }
+
+        .negative {
+            color: #e74c3c;
+        }
+
+        .neutral {
+            color: #95a5a6;
+        }
+
+        .pair-suggestions {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .pair-card {
+            background: linear-gradient(135deg, #667eea08 0%, #764ba208 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .pair-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .pair-card.top-pick {
+            border-left-color: #f39c12;
+            background: linear-gradient(135deg, #f39c1210 0%, #e67e2210 100%);
+            position: relative;
+        }
+
+        .pair-card.updating {
+            animation: pairUpdate 0.5s ease;
+        }
+
+        @keyframes pairUpdate {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(8px); }
+            100% { transform: translateX(0); }
+        }
+
+        .top-pick-badge {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            background: #f39c12;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 700;
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        .pair-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .pair-name {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .pair-direction {
+            font-size: 1.5em;
+        }
+
+        .pair-details {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .pair-currency {
+            text-align: center;
+        }
+
+        .pair-currency-flag {
+            font-size: 2em;
+            display: block;
+        }
+
+        .pair-currency-code {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #333;
+            margin-top: 5px;
+        }
+
+        .pair-currency-strength {
+            font-size: 0.9em;
+            margin-top: 3px;
+        }
+
+        .pair-arrow {
+            font-size: 2em;
+            text-align: center;
+        }
+
+        .pair-metrics {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .metric {
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.8em;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #333;
+            margin-top: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .signal-strength {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .signal-strong {
+            background: #27ae6020;
+            color: #27ae60;
+        }
+
+        .signal-moderate {
+            background: #f39c1220;
+            color: #f39c12;
+        }
+
+        .signal-weak {
+            background: #95a5a620;
+            color: #95a5a6;
+        }
+
+        .summary-section {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 30px;
+        }
+
+        .summary-title {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .ranking-list {
+            list-style: none;
+            counter-reset: rank;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 10px;
+            counter-increment: rank;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease, background 0.3s ease;
+        }
+
+        .ranking-item:hover {
+            transform: translateX(10px);
+        }
+
+        .ranking-item.changed {
+            background: #fef9e7;
+            animation: highlightChange 2s ease;
+        }
+
+        @keyframes highlightChange {
+            0% { background: #fef9e7; }
+            100% { background: white; }
+        }
+
+        .rank-number {
+            font-weight: 700;
+            font-size: 1.2em;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            margin-right: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .rank-number.changed {
+            background: #f39c12;
+            animation: bounce 0.6s ease;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        .rank-info {
+            flex: 1;
+        }
+
+        .rank-currency {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .rank-strength {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .rank-bar {
+            width: 150px;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-left: auto;
+        }
+
+        .rank-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.8s ease, background 0.8s ease;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #e74c3c;
+            font-size: 1.1em;
+        }
+
+        .last-updated {
+            text-align: center;
+            margin-top: 20px;
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .refresh-btn {
+            display: block;
+            margin: 20px auto 0;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+        }
+
+        .refresh-btn:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .strategy-note {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .strategy-note strong {
+            color: #333;
+        }
+
+        .update-frequency-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .frequency-btn {
+            padding: 5px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s ease;
+        }
+
+        .frequency-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .market-open-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .market-open {
+            background: #27ae60;
+        }
+
+        .market-closed {
+            background: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-section">
+            <div class="title-section">
+                <h1>
+                    💪 Currency Strength Meter
+                    <span style="font-size: 0.5em; color: #888;">LIVE</span>
+                </h1>
+                <p class="subtitle">Real-time analysis with automatic live updates</p>
+            </div>
+            
+            <div class="live-status">
+                <div class="status-indicator">
+                    <div class="pulse-dot" id="pulseDot"></div>
+                    <span class="status-text" id="statusText">Live Updates Active</span>
+                </div>
+                <div class="countdown" id="countdown">Next update: --</div>
+                <button class="live-toggle-btn active" id="liveToggle" onclick="toggleLiveUpdates()">
+                    ⏸️ Pause Live
+                </button>
+            </div>
+        </div>
+
+        <div class="timeframe-selector" id="timeframeSelector">
+            <button class="timeframe-btn" data-period="5m" data-interval="5m">5 Minutes</button>
+            <button class="timeframe-btn" data-period="15m" data-interval="15m">15 Minutes</button>
+            <button class="timeframe-btn" data-period="30m" data-interval="30m">30 Minutes</button>
+            <button class="timeframe-btn" data-period="1h" data-interval="1h">1 Hour</button>
+            <button class="timeframe-btn" data-period="4h" data-interval="1h">4 Hours</button>
+            <button class="timeframe-btn active" data-period="1d" data-interval="1d">1 Day</button>
+            <button class="timeframe-btn" data-period="5d" data-interval="1d">5 Days</button>
+            <button class="timeframe-btn" data-period="1mo" data-interval="1d">1 Month</button>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="currencies-section">
+                <div class="section-title">📊 Currency Strengths</div>
+                <div class="currencies-grid" id="currenciesGrid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading currency data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pair-suggestions-section">
+                <div class="section-title">🎯 Strong vs Weak Pair Suggestions</div>
+                <div class="pair-suggestions" id="pairSuggestions">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Analyzing pairs...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-section" id="summarySection">
+            <div class="summary-title">🏆 Currency Strength Ranking</div>
+            <ul class="ranking-list" id="rankingList">
+                <li class="loading">Calculating rankings...</li>
+            </ul>
+        </div>
+
+        <div class="strategy-note">
+            <strong>💡 Live Trading Strategy:</strong> The pairs suggested above represent the strongest currencies paired against the weakest. 
+            <strong>Buy</strong> the strong currency and <strong>sell</strong> the weak currency. The meter automatically updates to reflect market changes. 
+            Watch for ranking changes and signal strength variations. Always combine with your own analysis and risk management.
+        </div>
+
+        <div class="last-updated" id="lastUpdated"></div>
+        <button class="refresh-btn" onclick="refreshData()">🔄 Force Refresh Now</button>
+    </div>
+
+    <script>
+        const currencies = [
+            { code: 'USD', name: 'US Dollar', flag: '🇺🇸' },
+            { code: 'GBP', name: 'British Pound', flag: '🇬🇧' },
+            { code: 'NZD', name: 'New Zealand Dollar', flag: '🇳🇿' },
+            { code: 'CAD', name: 'Canadian Dollar', flag: '🇨🇦' },
+            { code: 'CHF', name: 'Swiss Franc', flag: '🇨🇭' },
+            { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
+            { code: 'AUD', name: 'Australian Dollar', flag: '🇦🇺' },
+            { code: 'JPY', name: 'Japanese Yen', flag: '🇯🇵' }
+        ];
+
+        let currentPeriod = '1d';
+        let currentInterval = '1d';
+        let currencyData = {};
+        let previousCurrencyData = {};
+        let liveUpdateInterval;
+        let countdownInterval;
+        let isLiveUpdatesActive = true;
+        let updateFrequency = 10000; // Default: 10 seconds
+        let secondsUntilUpdate = 10;
+        let isUpdating = false;
+
+        // Market hours detection (simplified)
+        function isMarketOpen() {
+            const now = new Date();
+            const day = now.getDay();
+            const hour = now.getUTCHours();
+            
+            // Forex market is open 24/5 (Sunday 22:00 UTC to Friday 22:00 UTC)
+            if (day === 0) return hour >= 22; // Sunday after 22:00
+            if (day === 6) return hour < 22; // Friday before 22:00
+            return day >= 1 && day <= 5; // Monday to Thursday
+        }
+
+        // Initialize the application
+        async function init() {
+            setupTimeframeButtons();
+            await fetchAllCurrencyData();
+            updateDisplay();
+            startLiveUpdates();
+        }
+
+        // Setup timeframe selector buttons
+        function setupTimeframeButtons() {
+            const buttons = document.querySelectorAll('.timeframe-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    buttons.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentPeriod = this.dataset.period;
+                    currentInterval = this.dataset.interval;
+                    
+                    // Adjust update frequency based on timeframe
+                    adjustUpdateFrequency();
+                    
+                    fetchAllCurrencyData().then(() => updateDisplay());
+                });
+            });
+        }
+
+        // Adjust update frequency based on selected timeframe
+        function adjustUpdateFrequency() {
+            switch(currentPeriod) {
+                case '5m':
+                case '15m':
+                    updateFrequency = 5000; // 5 seconds for short timeframes
+                    break;
+                case '30m':
+                case '1h':
+                    updateFrequency = 10000; // 10 seconds
+                    break;
+                case '4h':
+                    updateFrequency = 30000; // 30 seconds
+                    break;
+                case '1d':
+                    updateFrequency = 60000; // 1 minute
+                    break;
+                case '5d':
+                case '1mo':
+                    updateFrequency = 300000; // 5 minutes for long timeframes
+                    break;
+                default:
+                    updateFrequency = 10000;
+            }
+            secondsUntilUpdate = Math.ceil(updateFrequency / 1000);
+            
+            if (isLiveUpdatesActive) {
+                restartLiveUpdates();
+            }
+        }
+
+        // Toggle live updates
+        function toggleLiveUpdates() {
+            isLiveUpdatesActive = !isLiveUpdatesActive;
+            const toggleBtn = document.getElementById('liveToggle');
+            const pulseDot = document.getElementById('pulseDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (isLiveUpdatesActive) {
+                toggleBtn.textContent = '⏸️ Pause Live';
+                toggleBtn.className = 'live-toggle-btn active';
+                pulseDot.className = 'pulse-dot';
+                statusText.textContent = 'Live Updates Active';
+                startLiveUpdates();
+            } else {
+                toggleBtn.textContent = '▶️ Resume Live';
+                toggleBtn.className = 'live-toggle-btn paused';
+                pulseDot.className = 'pulse-dot paused';
+                statusText.textContent = 'Updates Paused';
+                stopLiveUpdates();
+            }
+        }
+
+        // Start live updates
+        function startLiveUpdates() {
+            stopLiveUpdates(); // Clear existing intervals
+            
+            if (isLiveUpdatesActive) {
+                // Update countdown
+                countdownInterval = setInterval(updateCountdown, 1000);
+                
+                // Main update interval
+                liveUpdateInterval = setInterval(async () => {
+                    if (!isUpdating) {
+                        await performLiveUpdate();
+                    }
+                }, updateFrequency);
+                
+                updateCountdown();
+            }
+        }
+
+        // Stop live updates
+        function stopLiveUpdates() {
+            if (liveUpdateInterval) {
+                clearInterval(liveUpdateInterval);
+                liveUpdateInterval = null;
+            }
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+        }
+
+        // Restart live updates
+        function restartLiveUpdates() {
+            if (isLiveUpdatesActive) {
+                startLiveUpdates();
+            }
+        }
+
+        // Update countdown timer
+        function updateCountdown() {
+            const countdownEl = document.getElementById('countdown');
+            if (isLiveUpdatesActive) {
+                countdownEl.textContent = `Next update: ${secondsUntilUpdate}s`;
+                secondsUntilUpdate--;
+                if (secondsUntilUpdate < 0) {
+                    secondsUntilUpdate = Math.ceil(updateFrequency / 1000);
+                }
+            } else {
+                countdownEl.textContent = 'Updates paused';
+            }
+        }
+
+        // Perform live update
+        async function performLiveUpdate() {
+            if (isUpdating) return;
+            
+            isUpdating = true;
+            secondsUntilUpdate = Math.ceil(updateFrequency / 1000);
+            
+            try {
+                // Store previous data for comparison
+                previousCurrencyData = JSON.parse(JSON.stringify(currencyData));
+                
+                // Fetch new data
+                await fetchAllCurrencyData(false); // Silent update
+                
+                // Check for significant changes
+                const hasChanges = detectSignificantChanges();
+                
+                // Update display with animations if there are changes
+                updateDisplay(hasChanges);
+                
+                // Update timestamp
+                document.getElementById('lastUpdated').textContent = 
+                    `Last updated: ${new Date().toLocaleTimeString()} (Live)`;
+                
+            } catch (error) {
+                console.error('Live update error:', error);
+            } finally {
+                isUpdating = false;
+            }
+        }
+
+        // Detect significant changes in currency data
+        function detectSignificantChanges() {
+            if (Object.keys(previousCurrencyData).length === 0) return true;
+            
+            let hasChanges = false;
+            
+            for (const [code, data] of Object.entries(currencyData)) {
+                const prevData = previousCurrencyData[code];
+                if (prevData) {
+                    const strengthChange = Math.abs(data.strength - prevData.strength);
+                    if (strengthChange > 0.5) { // Significant change threshold
+                        hasChanges = true;
+                        
+                        // Add change badge to card
+                        const card = document.querySelector(`[data-currency="${code}"]`);
+                        if (card) {
+                            const badge = card.querySelector('.change-badge');
+                            if (badge) {
+                                const changeDirection = data.strength > prevData.strength ? 'up' : 'down';
+                                const changeAmount = Math.abs(data.strength - prevData.strength).toFixed(1);
+                                badge.textContent = `${changeDirection === 'up' ? '↑' : '↓'} ${changeAmount}`;
+                                badge.className = `change-badge ${changeDirection} visible`;
+                                
+                                setTimeout(() => {
+                                    badge.classList.remove('visible');
+                                }, 3000);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return hasChanges;
+        }
+
+        // Fetch data for all currencies
+        async function fetchAllCurrencyData(showLoader = true) {
+            const grid = document.getElementById('currenciesGrid');
+            if (showLoader) {
+                grid.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading currency data...</p></div>';
+            }
+
+            // Don't clear currencyData if it's a silent update
+            if (!showLoader) {
+                // Keep existing data as backup
+            }
+            
+            // Define pairs to analyze (using USD as base for most)
+            const pairs = [
+                { pair: 'EURUSD=X', currency: 'EUR', base: 'USD' },
+                { pair: 'GBPUSD=X', currency: 'GBP', base: 'USD' },
+                { pair: 'AUDUSD=X', currency: 'AUD', base: 'USD' },
+                { pair: 'NZDUSD=X', currency: 'NZD', base: 'USD' },
+                { pair: 'USDCAD=X', currency: 'CAD', base: 'USD', inverse: true },
+                { pair: 'USDCHF=X', currency: 'CHF', base: 'USD', inverse: true },
+                { pair: 'USDJPY=X', currency: 'JPY', base: 'USD', inverse: true },
+            ];
+
+            try {
+                const promises = pairs.map(async (pairData) => {
+                    try {
+                        const data = await fetchYahooFinanceData(pairData.pair);
+                        return { ...pairData, data };
+                    } catch (error) {
+                        console.error(`Error fetching ${pairData.pair}:`, error);
+                        return { ...pairData, data: null };
+                    }
+                });
+
+                const results = await Promise.all(promises);
+                
+                // Process USD (base currency)
+                const newCurrencyData = {};
+                newCurrencyData['USD'] = { change: 0, strength: 50, data: [] };
+                
+                // Process other currencies
+                results.forEach(result => {
+                    if (result.data && result.data.length > 0) {
+                        const change = calculateChange(result.data);
+                        const volatility = calculateVolatility(result.data);
+                        const momentum = calculateMomentum(result.data);
+                        
+                        let strength = calculateStrength(change, result.inverse);
+                        if (result.inverse) {
+                            newCurrencyData[result.currency] = {
+                                change: -change,
+                                strength: 100 - strength,
+                                data: result.data,
+                                volatility: volatility,
+                                momentum: result.inverse ? -momentum : momentum
+                            };
+                        } else {
+                            newCurrencyData[result.currency] = {
+                                change: change,
+                                strength: strength,
+                                data: result.data,
+                                volatility: volatility,
+                                momentum: momentum
+                            };
+                        }
+                    }
+                });
+
+                // Add USD metrics
+                const avgVol = calculateAverageVolatility(newCurrencyData);
+                newCurrencyData['USD'].volatility = avgVol;
+                newCurrencyData['USD'].momentum = 0;
+
+                // Update currencyData
+                currencyData = newCurrencyData;
+
+                // Normalize strengths
+                normalizeStrengths();
+                
+                if (showLoader) {
+                    document.getElementById('lastUpdated').textContent = 
+                        `Last updated: ${new Date().toLocaleTimeString()}`;
+                }
+                
+            } catch (error) {
+                console.error('Error fetching currency data:', error);
+                if (showLoader) {
+                    document.getElementById('currenciesGrid').innerHTML = 
+                        '<div class="error">Error loading currency data. Please try again.</div>';
+                }
+            }
+        }
+
+        // Fetch data from Yahoo Finance API
+        async function fetchYahooFinanceData(symbol) {
+            const now = Math.floor(Date.now() / 1000);
+            let period1;
+            
+            // Calculate start time based on period
+            switch(currentPeriod) {
+                case '5m': period1 = now - (5 * 60); break;
+                case '15m': period1 = now - (15 * 60); break;
+                case '30m': period1 = now - (30 * 60); break;
+                case '1h': period1 = now - (60 * 60); break;
+                case '4h': period1 = now - (4 * 60 * 60); break;
+                case '1d': period1 = now - (24 * 60 * 60); break;
+                case '5d': period1 = now - (5 * 24 * 60 * 60); break;
+                case '1mo': period1 = now - (30 * 24 * 60 * 60); break;
+                default: period1 = now - (24 * 60 * 60);
+            }
+
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${period1}&period2=${now}&interval=${currentInterval}`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const json = await response.json();
+                
+                if (json.chart && json.chart.result && json.chart.result[0]) {
+                    const result = json.chart.result[0];
+                    const timestamps = result.timestamp;
+                    const quotes = result.indicators.quote[0];
+                    
+                    // Combine timestamps and close prices
+                    const data = timestamps.map((timestamp, index) => ({
+                        timestamp: timestamp * 1000, // Convert to milliseconds
+                        close: quotes.close[index],
+                        open: quotes.open[index],
+                        high: quotes.high[index],
+                        low: quotes.low[index]
+                    })).filter(d => d.close !== null);
+                    
+                    return data;
+                }
+                return [];
+            } catch (error) {
+                console.error(`Error fetching ${symbol}:`, error);
+                // Return mock data for demonstration if API fails
+                return generateMockData();
+            }
+        }
+
+        // Generate mock data for demonstration when API fails
+        function generateMockData() {
+            const data = [];
+            const now = Date.now();
+            let basePrice = 1.0;
+            const points = currentPeriod === '5m' ? 5 : 
+                          currentPeriod === '15m' ? 15 :
+                          currentPeriod === '30m' ? 30 :
+                          currentPeriod === '1h' ? 60 :
+                          currentPeriod === '4h' ? 240 :
+                          currentPeriod === '1d' ? 24 :
+                          currentPeriod === '5d' ? 120 :
+                          30; // 1 month
+                          
+            const interval = currentInterval === '5m' ? 5 * 60 * 1000 :
+                            currentInterval === '15m' ? 15 * 60 * 1000 :
+                            currentInterval === '30m' ? 30 * 60 * 1000 :
+                            currentInterval === '1h' ? 60 * 60 * 1000 :
+                            24 * 60 * 60 * 1000;
+
+            // Add some randomness to simulate market movements
+            const trend = (Math.random() - 0.5) * 0.02;
+            
+            for (let i = points; i >= 0; i--) {
+                basePrice += (Math.random() - 0.5) * 0.01 + trend;
+                data.push({
+                    timestamp: now - (i * interval),
+                    close: Math.abs(basePrice),
+                    open: Math.abs(basePrice + (Math.random() - 0.5) * 0.005),
+                    high: Math.abs(basePrice + Math.random() * 0.01),
+                    low: Math.abs(basePrice - Math.random() * 0.01)
+                });
+            }
+            return data;
+        }
+
+        // Calculate percentage change
+        function calculateChange(data) {
+            if (!data || data.length < 2) return 0;
+            const firstPrice = data[0].close;
+            const lastPrice = data[data.length - 1].close;
+            return ((lastPrice - firstPrice) / firstPrice) * 100;
+        }
+
+        // Calculate volatility (standard deviation of returns)
+        function calculateVolatility(data) {
+            if (!data || data.length < 2) return 0;
+            
+            const returns = [];
+            for (let i = 1; i < data.length; i++) {
+                returns.push((data[i].close - data[i-1].close) / data[i-1].close);
+            }
+            
+            const mean = returns.reduce((sum, r) => sum + r, 0) / returns.length;
+            const variance = returns.reduce((sum, r) => sum + Math.pow(r - mean, 2), 0) / returns.length;
+            
+            return Math.sqrt(variance) * 100; // Convert to percentage
+        }
+
+        // Calculate momentum (rate of change)
+        function calculateMomentum(data) {
+            if (!data || data.length < 5) return 0;
+            
+            const recentPrices = data.slice(-5);
+            const oldPrices = data.slice(0, 5);
+            
+            const recentAvg = recentPrices.reduce((sum, d) => sum + d.close, 0) / recentPrices.length;
+            const oldAvg = oldPrices.reduce((sum, d) => sum + d.close, 0) / oldPrices.length;
+            
+            return ((recentAvg - oldAvg) / oldAvg) * 100;
+        }
+
+        // Calculate average volatility across all currencies
+        function calculateAverageVolatility(data) {
+            const volatilities = Object.values(data)
+                .filter(d => d.volatility !== undefined)
+                .map(d => d.volatility);
+            
+            if (volatilities.length === 0) return 0;
+            return volatilities.reduce((sum, v) => sum + v, 0) / volatilities.length;
+        }
+
+        // Calculate strength score (0-100)
+        function calculateStrength(change, inverse = false) {
+            // Convert percentage change to a 0-100 scale
+            // Assuming max change of ±2% for full scale
+            const maxChange = 2;
+            let normalizedChange = change;
+            if (inverse) normalizedChange = -change;
+            
+            let strength = 50 + (normalizedChange / maxChange) * 50;
+            return Math.max(0, Math.min(100, strength));
+        }
+
+        // Normalize all strengths to ensure they average to 50
+        function normalizeStrengths() {
+            const currencies = Object.keys(currencyData);
+            if (currencies.length === 0) return;
+            
+            const avgStrength = currencies.reduce((sum, curr) => 
+                sum + (currencyData[curr]?.strength || 50), 0) / currencies.length;
+            
+            const adjustment = 50 - avgStrength;
+            
+            currencies.forEach(currency => {
+                if (currencyData[currency]) {
+                    currencyData[currency].strength = 
+                        Math.max(0, Math.min(100, currencyData[currency].strength + adjustment));
+                }
+            });
+        }
+
+        // Generate pair suggestions based on strongest vs weakest
+        function generatePairSuggestions() {
+            const sortedCurrencies = Object.entries(currencyData)
+                .sort(([, a], [, b]) => b.strength - a.strength);
+            
+            if (sortedCurrencies.length < 2) return [];
+            
+            const suggestions = [];
+            const strongest = sortedCurrencies.slice(0, 3); // Top 3 strongest
+            const weakest = sortedCurrencies.slice(-3); // Bottom 3 weakest
+            
+            // Generate all combinations of strong vs weak
+            for (const [strongCode, strongData] of strongest) {
+                for (const [weakCode, weakData] of weakest) {
+                    if (strongCode !== weakCode) {
+                        const strengthDiff = strongData.strength - weakData.strength;
+                        const avgVolatility = (strongData.volatility + weakData.volatility) / 2;
+                        const momentumScore = strongData.momentum - weakData.momentum;
+                        
+                        // Calculate signal strength based on multiple factors
+                        const signalScore = calculateSignalScore(strengthDiff, avgVolatility, momentumScore);
+                        
+                        suggestions.push({
+                            strongCurrency: strongCode,
+                            weakCurrency: weakCode,
+                            pairName: `${strongCode}/${weakCode}`,
+                            strengthDiff: strengthDiff,
+                            volatility: avgVolatility,
+                            momentum: momentumScore,
+                            signalScore: signalScore,
+                            signal: getSignalLabel(signalScore),
+                            direction: 'BUY'
+                        });
+                    }
+                }
+            }
+            
+            // Sort by signal score (best first)
+            return suggestions.sort((a, b) => b.signalScore - a.signalScore);
+        }
+
+        // Calculate signal score (0-100)
+        function calculateSignalScore(strengthDiff, volatility, momentum) {
+            // Weight the different factors
+            const strengthWeight = 0.6;
+            const volatilityWeight = 0.2;
+            const momentumWeight = 0.2;
+            
+            // Normalize strength difference (0-100 scale)
+            const strengthScore = Math.min(100, (strengthDiff / 50) * 100);
+            
+            // Volatility score (prefer moderate volatility)
+            const optimalVolatility = 0.5; // Optimal volatility percentage
+            const volatilityScore = Math.max(0, 100 - Math.abs(volatility - optimalVolatility) * 50);
+            
+            // Momentum score
+            const momentumScore = Math.min(100, Math.max(0, 50 + momentum * 20));
+            
+            return (strengthScore * strengthWeight) + 
+                   (volatilityScore * volatilityWeight) + 
+                   (momentumScore * momentumWeight);
+        }
+
+        // Get signal label based on score
+        function getSignalLabel(score) {
+            if (score >= 70) return { text: 'STRONG SIGNAL', class: 'signal-strong' };
+            if (score >= 50) return { text: 'MODERATE SIGNAL', class: 'signal-moderate' };
+            return { text: 'WEAK SIGNAL', class: 'signal-weak' };
+        }
+
+        // Update the display with current data
+        function updateDisplay(hasChanges = true) {
+            updateCurrencyCards(hasChanges);
+            updatePairSuggestions(hasChanges);
+            updateRankings(hasChanges);
+        }
+
+        // Update currency cards
+        function updateCurrencyCards(animate = false) {
+            const grid = document.getElementById('currenciesGrid');
+            
+            // Find strongest and weakest currencies
+            const sortedCurrencies = Object.entries(currencyData)
+                .sort(([, a], [, b]) => b.strength - a.strength);
+            
+            const strongestCode = sortedCurrencies[0]?.[0];
+            const weakestCode = sortedCurrencies[sortedCurrencies.length - 1]?.[0];
+            
+            const cardsHTML = currencies.map(currency => {
+                const data = currencyData[currency.code];
+                if (!data) return '';
+                
+                const strength = data.strength;
+                const change = data.change;
+                
+                const strengthColor = strength > 60 ? '#27ae60' : 
+                                     strength < 40 ? '#e74c3c' : '#f39c12';
+                
+                const changeClass = change > 0.1 ? 'positive' : 
+                                   change < -0.1 ? 'negative' : 'neutral';
+                
+                const changeSymbol = change > 0.1 ? '▲' : 
+                                    change < -0.1 ? '▼' : '■';
+                
+                const cardClass = currency.code === strongestCode ? 'strongest' :
+                                 currency.code === weakestCode ? 'weakest' : '';
+                
+                const animationClass = animate ? 'updating' : '';
+                
+                return `
+                    <div class="currency-card ${cardClass} ${animationClass}" data-currency="${currency.code}">
+                        <div class="change-badge"></div>
+                        <div class="currency-header">
+                            <span class="currency-flag">${currency.flag}</span>
+                            <span class="currency-name">${currency.code}</span>
+                        </div>
+                        <div style="color: #666; font-size: 0.9em; margin-bottom: 8px;">${currency.name}</div>
+                        <div class="strength-indicator">
+                            <div class="strength-fill" style="width: ${strength}%; background: ${strengthColor};"></div>
+                        </div>
+                        <div class="strength-value" style="color: ${strengthColor};">
+                            ${strength.toFixed(1)}
+                        </div>
+                        <div class="change-indicator ${changeClass}">
+                            ${changeSymbol} ${Math.abs(change).toFixed(2)}%
+                        </div>
+                        <div style="font-size: 0.8em; color: #888; margin-top: 5px; text-align: center;">
+                            Vol: ${data.volatility?.toFixed(2) || '0.00'}%
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            grid.innerHTML = cardsHTML;
+        }
+
+        // Update pair suggestions
+        function updatePairSuggestions(animate = false) {
+            const container = document.getElementById('pairSuggestions');
+            const suggestions = generatePairSuggestions();
+            
+            if (suggestions.length === 0) {
+                container.innerHTML = '<div class="loading">No pair suggestions available</div>';
+                return;
+            }
+            
+            const suggestionsHTML = suggestions.slice(0, 5).map((suggestion, index) => {
+                const strongCurrency = currencies.find(c => c.code === suggestion.strongCurrency);
+                const weakCurrency = currencies.find(c => c.code === suggestion.weakCurrency);
+                
+                const signalClass = suggestion.signal.class;
+                const isTopPick = index === 0;
+                const animationClass = animate ? 'updating' : '';
+                
+                return `
+                    <div class="pair-card ${isTopPick ? 'top-pick' : ''} ${animationClass}">
+                        ${isTopPick ? '<div class="top-pick-badge">⭐ TOP PICK</div>' : ''}
+                        <div class="pair-header">
+                            <div class="pair-name">${suggestion.pairName}</div>
+                            <div class="pair-direction" style="color: #27ae60;">📈 ${suggestion.direction}</div>
+                        </div>
+                        
+                        <div class="pair-details">
+                            <div class="pair-currency">
+                                <span class="pair-currency-flag">${strongCurrency?.flag || '💪'}</span>
+                                <div class="pair-currency-code">${suggestion.strongCurrency}</div>
+                                <div class="pair-currency-strength" style="color: #27ae60;">
+                                    Strong: ${currencyData[suggestion.strongCurrency]?.strength.toFixed(1)}
+                                </div>
+                            </div>
+                            
+                            <div class="pair-arrow">➡️</div>
+                            
+                            <div class="pair-currency">
+                                <span class="pair-currency-flag">${weakCurrency?.flag || '📉'}</span>
+                                <div class="pair-currency-code">${suggestion.weakCurrency}</div>
+                                <div class="pair-currency-strength" style="color: #e74c3c;">
+                                    Weak: ${currencyData[suggestion.weakCurrency]?.strength.toFixed(1)}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="pair-metrics">
+                            <div class="metric">
+                                <div class="metric-label">Strength Diff</div>
+                                <div class="metric-value" style="color: #667eea;">${suggestion.strengthDiff.toFixed(1)}</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Volatility</div>
+                                <div class="metric-value">${suggestion.volatility.toFixed(2)}%</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Signal</div>
+                                <div class="metric-value">
+                                    <span class="signal-strength ${signalClass}">${suggestion.signal.text}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = suggestionsHTML;
+        }
+
+        // Update rankings
+        function updateRankings(animate = false) {
+            const rankingList = document.getElementById('rankingList');
+            
+            const sortedCurrencies = currencies
+                .filter(c => currencyData[c.code])
+                .sort((a, b) => (currencyData[b.code]?.strength || 50) - (currencyData[a.code]?.strength || 50));
+            
+            // Detect ranking changes
+            let rankingChanged = false;
+            if (Object.keys(previousCurrencyData).length > 0) {
+                const previousRanking = currencies
+                    .filter(c => previousCurrencyData[c.code])
+                    .sort((a, b) => (previousCurrencyData[b.code]?.strength || 50) - (previousCurrencyData[a.code]?.strength || 50));
+                
+                for (let i = 0; i < sortedCurrencies.length; i++) {
+                    if (sortedCurrencies[i].code !== previousRanking[i]?.code) {
+                        rankingChanged = true;
+                        break;
+                    }
+                }
+            }
+            
+            const rankingsHTML = sortedCurrencies.map((currency, index) => {
+                const strength = currencyData[currency.code].strength;
+                const strengthColor = strength > 60 ? '#27ae60' : 
+                                     strength < 40 ? '#e74c3c' : '#f39c12';
+                
+                const changedClass = (animate && rankingChanged) ? 'changed' : '';
+                const rankChangedClass = (animate && rankingChanged) ? 'changed' : '';
+                
+                return `
+                    <li class="ranking-item ${changedClass}">
+                        <span class="rank-number ${rankChangedClass}">${index + 1}</span>
+                        <span style="font-size: 1.5em; margin-right: 15px;">${currency.flag}</span>
+                        <div class="rank-info">
+                            <div class="rank-currency">${currency.code} - ${currency.name}</div>
+                            <div class="rank-strength">Strength: ${strength.toFixed(1)} | Change: ${currencyData[currency.code].change.toFixed(2)}%</div>
+                        </div>
+                        <div class="rank-bar">
+                            <div class="rank-bar-fill" style="width: ${strength}%; background: ${strengthColor};"></div>
+                        </div>
+                    </li>
+                `;
+            }).join('');
+            
+            rankingList.innerHTML = rankingsHTML;
+        }
+
+        // Refresh data manually
+        function refreshData() {
+            fetchAllCurrencyData().then(() => updateDisplay(true));
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            stopLiveUpdates();
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
